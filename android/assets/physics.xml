@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- created with http://www.physicseditor.de -->
+<bodydef version="1.0">
+	<bodies>
+
+		<body name="bunny1_walk1">
+            <anchorpoint>0.0000,0.0000</anchorpoint>
+			<fixtures>
+
+				<fixture>
+					<density>2</density>
+					<friction>0</friction>
+					<restitution>1</restitution>
+					<filter_categoryBits>1</filter_categoryBits>
+					<filter_groupIndex>0</filter_groupIndex>
+					<filter_maskBits>65535</filter_maskBits>
+					<fixture_type>POLYGON</fixture_type>
+
+
+					<polygons>
+
+                        <polygon>  23.5000, 1.0000  ,  39.0000, 21.5000  ,  108.5000, 122.0000  ,  88.5000, 146.0000  ,  7.5000, 16.0000 </polygon>
+
+                        <polygon>  94.0000, 2.5000  ,  115.5000, 19.0000  ,  99.5000, 26.0000  ,  74.0000, 21.5000 </polygon>
+
+                        <polygon>  77.5000, 201.0000  ,  71.0000, 151.5000  ,  88.5000, 146.0000  ,  90.5000, 186.0000 </polygon>
+
+                        <polygon>  40.5000, 186.0000  ,  42.0000, 150.5000  ,  71.0000, 151.5000  ,  65.5000, 196.0000  ,  58.0000, 201.5000  ,  57.0000, 201.5000 </polygon>
+
+                        <polygon>  1.5000, 53.0000  ,  17.5000, 33.0000  ,  88.5000, 146.0000  ,  71.0000, 151.5000  ,  42.0000, 150.5000  ,  16.5000, 131.0000  ,  -0.5000, 88.0000 </polygon>
+
+                        <polygon>  99.5000, 26.0000  ,  118.5000, 57.0000  ,  119.5000, 87.0000  ,  108.5000, 122.0000  ,  39.0000, 21.5000  ,  74.0000, 21.5000 </polygon>
+
+					</polygons>
+
+				</fixture>
+
+			</fixtures>
+		</body>
+
+	</bodies>
+	<metadata>
+		<format>1</format>
+		<ptm_ratio>32</ptm_ratio>
+	</metadata>
+</bodydef>
+
+
+

@@ -7,67 +7,144 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.badlogic.gdx.physics.box2d.Box2D;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.World;
+import com.hi5dev.box2d_pexml.PEXML;
 
 import java.util.HashMap;
 
 public class CarrotGame extends ApplicationAdapter {
     final HashMap<String, Sprite> sprites = new HashMap<String, Sprite>();
     TextureAtlas textureAtlas;
-    Sprite bunny;
     SpriteBatch batch;
     OrthographicCamera camera;
     ExtendViewport viewport;
+    World world;
+    PEXML physicsBodies;
+    Box2DDebugRenderer debugRenderer;
+    Body bunny;
+    Body ground;
+
+    // Magic numbers for physics simulation
+    static final float SCALE = 0.05f;
+    static final float STEP_TIME = 1f / 60f;
+    static final int VELOCITY_ITERATIONS = 6;
+    static final int POSITION_ITERATIONS = 2;
+    float accumulator = 0;
+
+    // This function intelligently steps our physics world using a small dt
+    private void stepWorld() {
+        float delta = Gdx.graphics.getDeltaTime();
+        accumulator += Math.min(delta, 0.25f);
+        if (accumulator >= STEP_TIME) {
+            accumulator -= STEP_TIME;
+            world.step(STEP_TIME, VELOCITY_ITERATIONS, POSITION_ITERATIONS);
+        }
+    }
+
+    private void createGround() {
+        if (ground != null)
+            world.destroyBody(ground);
+
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.StaticBody;
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.friction = 1;
+        PolygonShape shape = new PolygonShape();
+        shape.setAsBox(camera.viewportWidth, 1);
+        fixtureDef.shape = shape;
+
+        ground = world.createBody(bodyDef);
+        ground.createFixture(fixtureDef);
+        ground.setTransform(0, 0, 0);
+
+        shape.dispose();
+    }
 
     private void generateSprites() {
         Array<TextureAtlas.AtlasRegion> regions = textureAtlas.getRegions();
         for (TextureAtlas.AtlasRegion region : regions) {
             Sprite sprite = textureAtlas.createSprite(region.name);
+            float width = sprite.getWidth() * SCALE;
+            float height = sprite.getHeight() * SCALE;
+            sprite.setSize(width, height);
+            sprite.setOrigin(0, 0);
             sprites.put(region.name, sprite);
         }
     }
 
-    private void drawSprite(String name, float x, float y) {
+    private void drawSprite(String name, float x, float y, float degrees) {
         Sprite sprite = sprites.get(name);
         sprite.setPosition(x, y);
+        sprite.setRotation(degrees);
+        sprite.setOrigin(0f, 0f);
         sprite.draw(batch);
+    }
+
+    private Body createBody(String name, float x, float y, float rotation) {
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+        Body body = physicsBodies.createBody(name, world, bodyDef, SCALE, SCALE);
+        body.setTransform(x, y, rotation);
+        return body;
     }
 
     @Override
     public void create() {
         // Prepare viewport
         camera = new OrthographicCamera();
-        viewport = new ExtendViewport(800, 600, camera);
+        viewport = new ExtendViewport(50, 50, camera);
+
+        // Prepare physics engine
+        Box2D.init();
+        debugRenderer = new Box2DDebugRenderer();
+        world = new World(new Vector2(0, -30), true);
+        physicsBodies = new PEXML(Gdx.files.internal("physics.xml").file());
 
         // Prepare sprites and drawing tools
         batch = new SpriteBatch();
         textureAtlas = new TextureAtlas("pack.atlas");
         generateSprites();
-    }
 
+        bunny = createBody("bunny1_walk1", 10, 30, 0);
+    }
 
     @Override
     public void resize(int width, int height) {
         // TODO: we will have to do this everytime we move the camera
         viewport.update(width, height, true);
         batch.setProjectionMatrix(camera.combined);
+        createGround();
     }
 
     @Override
     public void render() {
+        stepWorld();
         Gdx.gl.glClearColor(0.57f, 0.77f, 0.85f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         batch.begin();
-        drawSprite("bunny1_walk1", 0, 0);
-        drawSprite("bunny2_walk2", 200, 300);
-        drawSprite("bunny1_ready", 400, 300);
+
+        Vector2 position = bunny.getPosition();
+        float degrees = (float) Math.toDegrees(bunny.getAngle());
+        drawSprite("bunny1_walk1", position.x, position.y, degrees);
+
         batch.end();
+        debugRenderer.render(world, camera.combined);
     }
 
     @Override
     public void dispose() {
         textureAtlas.dispose();
         sprites.clear();
+        world.dispose();
+        debugRenderer.dispose();
     }
 }
