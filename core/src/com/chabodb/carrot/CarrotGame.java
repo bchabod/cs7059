@@ -2,6 +2,7 @@ package com.chabodb.carrot;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -17,7 +18,6 @@ import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
-import com.hi5dev.box2d_pexml.PEXML;
 
 import java.util.HashMap;
 
@@ -28,7 +28,7 @@ public class CarrotGame extends ApplicationAdapter {
     OrthographicCamera camera;
     ExtendViewport viewport;
     World world;
-    PEXML physicsBodies;
+    BodyEditorLoader physicsLoader;
     Box2DDebugRenderer debugRenderer;
     Body bunny;
     Body ground;
@@ -92,7 +92,14 @@ public class CarrotGame extends ApplicationAdapter {
     private Body createBody(String name, float x, float y, float rotation) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
-        Body body = physicsBodies.createBody(name, world, bodyDef, SCALE, SCALE);
+        bodyDef.fixedRotation = true;
+        FixtureDef fd = new FixtureDef();
+        fd.density = 2.0f;
+        fd.friction = 0.0f;
+        fd.restitution = 1.0f;
+        Body body = world.createBody(bodyDef);
+        float scale = sprites.get(name.split("\\.")[0]).getWidth();
+        physicsLoader.attachFixture(body, name, fd, scale);
         body.setTransform(x, y, rotation);
         return body;
     }
@@ -106,15 +113,15 @@ public class CarrotGame extends ApplicationAdapter {
         // Prepare physics engine
         Box2D.init();
         debugRenderer = new Box2DDebugRenderer();
-        world = new World(new Vector2(0, -30), true);
-        physicsBodies = new PEXML(Gdx.files.internal("physics.xml").file());
+        world = new World(new Vector2(0, -200), true);
+        physicsLoader = new BodyEditorLoader(Gdx.files.internal("physics.json"));
 
         // Prepare sprites and drawing tools
         batch = new SpriteBatch();
         textureAtlas = new TextureAtlas("pack.atlas");
         generateSprites();
 
-        bunny = createBody("bunny1_walk1", 10, 30, 0);
+        bunny = createBody("bunny1_walk1.png", 10, 30, 0);
     }
 
     @Override
