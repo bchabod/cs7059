@@ -134,6 +134,18 @@ public class CarrotGame extends ApplicationAdapter {
 
     @Override
     public void render() {
+
+        Vector2 vBunny = bunny.getLinearVelocity();
+        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+            vBunny.x = -40.0f;
+            bunny.setLinearVelocity(vBunny);
+        } else if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+            vBunny.x = 40.0f;
+        } else {
+            vBunny.x = 0.0f;
+        }
+        bunny.setLinearVelocity(vBunny);
+
         stepWorld();
         Gdx.gl.glClearColor(0.57f, 0.77f, 0.85f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
