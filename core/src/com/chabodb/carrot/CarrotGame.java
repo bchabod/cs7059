@@ -59,12 +59,12 @@ public class CarrotGame extends ApplicationAdapter {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.friction = 1;
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox(camera.viewportWidth, 1);
+        shape.setAsBox(camera.viewportWidth*3, 1);
         fixtureDef.shape = shape;
 
         ground = world.createBody(bodyDef);
         ground.createFixture(fixtureDef);
-        ground.setTransform(0, 0, 0);
+        ground.setTransform(-camera.viewportWidth, 0, 0);
 
         shape.dispose();
     }
@@ -136,15 +136,25 @@ public class CarrotGame extends ApplicationAdapter {
     public void render() {
 
         Vector2 vBunny = bunny.getLinearVelocity();
-        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)){
             vBunny.x = -40.0f;
             bunny.setLinearVelocity(vBunny);
-        } else if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
             vBunny.x = 40.0f;
         } else {
             vBunny.x = 0.0f;
         }
         bunny.setLinearVelocity(vBunny);
+
+        Vector2 pBunny = bunny.getPosition();
+        float halfBunny = sprites.get("bunny1_walk1").getWidth()/2;
+        if (pBunny.x > camera.viewportWidth - halfBunny) {
+            pBunny.x = - halfBunny;
+            bunny.setTransform(pBunny, bunny.getAngle());
+        } else if (pBunny.x < - halfBunny) {
+            pBunny.x = camera.viewportWidth - halfBunny;
+            bunny.setTransform(pBunny, bunny.getAngle());
+        }
 
         stepWorld();
         Gdx.gl.glClearColor(0.57f, 0.77f, 0.85f, 1);
