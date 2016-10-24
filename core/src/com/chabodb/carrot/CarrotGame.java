@@ -44,14 +44,17 @@ public class CarrotGame extends ApplicationAdapter {
     static final int POSITION_ITERATIONS = 2;
     float accumulator = 0;
 
+    static final float MAX_JUMP = 40.0f;
+
     private class Level {
         List<Vector2> platforms = new ArrayList<Vector2>();
-        float threshold = 0;
+        float threshold = MAX_JUMP/2;
         float lowerBound = 0;
-        float platformWidth;
+        float platformWidth, platformHeight;
 
         Level() {
             platformWidth = sprites.get("ground_grass").getWidth();
+            platformHeight = sprites.get("ground_grass").getHeight();
         }
 
         int randomInt(int Min, int Max) {
@@ -63,14 +66,13 @@ public class CarrotGame extends ApplicationAdapter {
         }
 
         void generate() {
-            int nbPlatforms = randomInt(5, 10);
-            for (int i = 0; i < nbPlatforms; i++) {
-                int randomX = randomInt(0, (int) camera.viewportWidth);
-                int randomY = randomInt(this.threshold, this.threshold + camera.viewportHeight);
-                platforms.add(new Vector2(randomX, randomY));
+            for(float yPos = threshold; yPos < threshold + 2*camera.viewportHeight;) {
+                int xPos = randomInt(0, (int)(camera.viewportWidth - platformWidth));
+                platforms.add(new Vector2(xPos, yPos));
+                yPos += randomInt(2*platformHeight, MAX_JUMP);
             }
             lowerBound = camera.position.y - camera.viewportHeight/2;
-            threshold += camera.viewportHeight;
+            threshold += 2*camera.viewportHeight;
             for (Iterator<Vector2> iterator = platforms.iterator(); iterator.hasNext(); ) {
                 Vector2 platform = iterator.next();
                 if (platform.y < lowerBound)
@@ -163,7 +165,7 @@ public class CarrotGame extends ApplicationAdapter {
         // Generate the beginning of the level
         level = new Level();
 
-        bunny = createBody("bunny1_walk1.png", 10, 30, 0);
+        bunny = createBody("bunny1_walk1.png", 10, MAX_JUMP, 0);
     }
 
     @Override
