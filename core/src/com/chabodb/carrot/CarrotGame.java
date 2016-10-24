@@ -19,7 +19,10 @@ import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 public class CarrotGame extends ApplicationAdapter {
     final HashMap<String, Sprite> sprites = new HashMap<String, Sprite>();
@@ -32,6 +35,7 @@ public class CarrotGame extends ApplicationAdapter {
     Box2DDebugRenderer debugRenderer;
     Body bunny;
     Body ground;
+    Level level;
 
     // Magic numbers for physics simulation
     static final float SCALE = 0.05f;
@@ -39,6 +43,41 @@ public class CarrotGame extends ApplicationAdapter {
     static final int VELOCITY_ITERATIONS = 6;
     static final int POSITION_ITERATIONS = 2;
     float accumulator = 0;
+
+    private class Level {
+        List<Vector2> platforms = new ArrayList<Vector2>();
+        float threshold = 0;
+        float lowerBound = 0;
+        float platformWidth;
+
+        Level() {
+            platformWidth = sprites.get("ground_grass").getWidth();
+        }
+
+        int randomInt(int Min, int Max) {
+            return Min + (int) (Math.random() * ((Max - Min) + 1));
+        }
+
+        int randomInt(float Min, float Max) {
+            return this.randomInt((int) Min, (int) Max);
+        }
+
+        void generate() {
+            int nbPlatforms = randomInt(5, 10);
+            for (int i = 0; i < nbPlatforms; i++) {
+                int randomX = randomInt(0, (int) camera.viewportWidth);
+                int randomY = randomInt(this.threshold, this.threshold + camera.viewportHeight);
+                platforms.add(new Vector2(randomX, randomY));
+            }
+            lowerBound = camera.position.y - camera.viewportHeight/2;
+            threshold += camera.viewportHeight;
+            for (Iterator<Vector2> iterator = platforms.iterator(); iterator.hasNext(); ) {
+                Vector2 platform = iterator.next();
+                if (platform.y < lowerBound)
+                    iterator.remove();
+            }
+        }
+    }
 
     // This function intelligently steps our physics world using a small dt
     private void stepWorld() {
@@ -108,7 +147,7 @@ public class CarrotGame extends ApplicationAdapter {
     public void create() {
         // Prepare viewport
         camera = new OrthographicCamera();
-        viewport = new ExtendViewport(50, 50, camera);
+        viewport = new ExtendViewport(150, 150, camera);
 
         // Prepare physics engine
         Box2D.init();
@@ -120,6 +159,9 @@ public class CarrotGame extends ApplicationAdapter {
         batch = new SpriteBatch();
         textureAtlas = new TextureAtlas("pack.atlas");
         generateSprites();
+
+        // Generate the beginning of the level
+        level = new Level();
 
         bunny = createBody("bunny1_walk1.png", 10, 30, 0);
     }
@@ -165,8 +207,15 @@ public class CarrotGame extends ApplicationAdapter {
         float degrees = (float) Math.toDegrees(bunny.getAngle());
         drawSprite("bunny1_walk1", position.x, position.y, degrees);
 
+        for (Vector2 p : level.platforms) {
+            drawSprite("ground_grass", p.x, p.y, 0);
+        }
+
         batch.end();
         debugRenderer.render(world, camera.combined);
+        if (level.platforms.size() == 0) {
+            level.generate();
+        }
     }
 
     @Override
