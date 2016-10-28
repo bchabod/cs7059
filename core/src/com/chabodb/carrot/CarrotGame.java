@@ -44,7 +44,7 @@ public class CarrotGame extends ApplicationAdapter {
     CustomListener collisionFilter;
 
     // Magic numbers for physics simulation
-    static final float SCALE = 0.05f;
+    static final float SCALE = 0.03f;
     static final float STEP_TIME = 1f / 60f;
     static final int VELOCITY_ITERATIONS = 6;
     static final int POSITION_ITERATIONS = 2;
@@ -214,7 +214,7 @@ public class CarrotGame extends ApplicationAdapter {
     public void create() {
         // Prepare viewport
         camera = new OrthographicCamera();
-        viewport = new ExtendViewport(150, 150, camera);
+        viewport = new ExtendViewport(100, 100, camera);
 
         // Prepare physics engine
         Box2D.init();
@@ -237,7 +237,6 @@ public class CarrotGame extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
-        // TODO: we will have to do this everytime we move the camera
         viewport.update(width, height, true);
         batch.setProjectionMatrix(camera.combined);
         createGround();
@@ -245,13 +244,12 @@ public class CarrotGame extends ApplicationAdapter {
 
     @Override
     public void render() {
-
         Vector2 vBunny = bunny.getLinearVelocity();
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-            vBunny.x = -80.0f;
+            vBunny.x = -60.0f;
             bunny.setLinearVelocity(vBunny);
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            vBunny.x = 80.0f;
+            vBunny.x = 60.0f;
         } else {
             vBunny.x = 0.0f;
         }
@@ -282,8 +280,14 @@ public class CarrotGame extends ApplicationAdapter {
 
         batch.end();
         debugRenderer.render(world, camera.combined);
-        if (level.platforms.size() == 0) {
+        if (level.threshold - camera.position.y < camera.viewportHeight) {
             level.generate();
+        }
+
+        if (bunny.getPosition().y > camera.position.y) {
+            camera.position.y = bunny.getPosition().y;
+            camera.update();
+            batch.setProjectionMatrix(camera.combined);
         }
     }
 
