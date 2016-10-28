@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
@@ -214,7 +215,7 @@ public class CarrotGame extends ApplicationAdapter {
     public void create() {
         // Prepare viewport
         camera = new OrthographicCamera();
-        viewport = new ExtendViewport(100, 100, camera);
+        viewport = new ExtendViewport(65, 65, camera);
 
         // Prepare physics engine
         Box2D.init();
@@ -245,14 +246,23 @@ public class CarrotGame extends ApplicationAdapter {
     @Override
     public void render() {
         Vector2 vBunny = bunny.getLinearVelocity();
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-            vBunny.x = -60.0f;
-            bunny.setLinearVelocity(vBunny);
-        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            vBunny.x = 60.0f;
+
+        boolean available = Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer);
+        if (!available) {
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+                vBunny.x = -60.0f;
+            } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+                vBunny.x = 60.0f;
+            } else {
+                vBunny.x = 0.0f;
+            }
         } else {
-            vBunny.x = 0.0f;
+            Matrix4 matrix = new Matrix4();
+            Gdx.input.getRotationMatrix(matrix.val);
+            float pitch = matrix.getValues()[9];
+            vBunny.x = 100.0f * pitch;
         }
+
         bunny.setLinearVelocity(vBunny);
 
         Vector2 pBunny = bunny.getPosition();
