@@ -11,7 +11,12 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.Contact;
+import com.badlogic.gdx.physics.box2d.ContactImpulse;
+import com.badlogic.gdx.physics.box2d.ContactListener;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
@@ -36,6 +41,7 @@ public class CarrotGame extends ApplicationAdapter {
     Body bunny;
     Body ground;
     Level level;
+    CustomListener collisionFilter;
 
     // Magic numbers for physics simulation
     static final float SCALE = 0.05f;
@@ -45,6 +51,8 @@ public class CarrotGame extends ApplicationAdapter {
     float accumulator = 0;
 
     static final float MAX_JUMP = 40.0f;
+    static final float GRAV = 250.0f;
+    static final float BOUNCE_VEL = (float)(Math.sqrt(2*GRAV*MAX_JUMP));
 
     private class Level {
         List<Vector2> platforms = new ArrayList<Vector2>();
@@ -69,7 +77,11 @@ public class CarrotGame extends ApplicationAdapter {
             for(float yPos = threshold; yPos < threshold + 2*camera.viewportHeight;) {
                 int xPos = randomInt(0, (int)(camera.viewportWidth - platformWidth));
                 platforms.add(new Vector2(xPos, yPos));
-                yPos += randomInt(2*platformHeight, MAX_JUMP);
+
+                // Generate associated physics object
+                createBody("ground_grass.png", xPos, yPos, 0, BodyDef.BodyType.StaticBody);
+
+                yPos += randomInt(2*platformHeight, MAX_JUMP/3);
             }
             lowerBound = camera.position.y - camera.viewportHeight/2;
             threshold += 2*camera.viewportHeight;
@@ -78,6 +90,59 @@ public class CarrotGame extends ApplicationAdapter {
                 if (platform.y < lowerBound)
                     iterator.remove();
             }
+        }
+    }
+
+    private class CustomListener implements ContactListener {
+
+        private boolean handlePlatform(Fixture bunny, Fixture platform) {
+            return bunny.getBody().getLinearVelocity().y < 0;
+        }
+
+        @Override
+        public void preSolve(Contact contact, Manifold oldManifold) {
+            Fixture fixtureA = contact.getFixtureA();
+            Fixture fixtureB = contact.getFixtureB();
+            if (fixtureA.getBody().getUserData() == null || fixtureB.getBody().getUserData() == null)
+                return;
+            String sA = fixtureA.getBody().getUserData().toString();
+            String sB = fixtureB.getBody().getUserData().toString();
+            if (sA.equals("bunny1_walk1.png") && sB.equals("ground_grass.png")) {
+                contact.setEnabled(handlePlatform(fixtureA, fixtureB));
+            }
+            else if (sB.equals("bunny1_walk1.png") && sA.equals("ground_grass.png")) {
+                contact.setEnabled(handlePlatform(fixtureB, fixtureA));
+            }
+        }
+
+        @Override
+        public void postSolve(Contact contact, ContactImpulse impulse) {
+            if (!contact.isEnabled())
+                return;
+            Fixture fixtureA = contact.getFixtureA();
+            Fixture fixtureB = contact.getFixtureB();
+            Object uA = fixtureA.getBody().getUserData();
+            Object uB = fixtureB.getBody().getUserData();
+            if (uA != null && uA.toString().equals("bunny1_walk1.png")) {
+                Vector2 vBunny = fixtureA.getBody().getLinearVelocity();
+                vBunny.y = BOUNCE_VEL;
+                fixtureA.getBody().setLinearVelocity(vBunny);
+            }
+            else if (uB != null && uB.toString().equals("bunny1_walk1.png")) {
+                Vector2 vBunny = fixtureB.getBody().getLinearVelocity();
+                vBunny.y = BOUNCE_VEL;
+                fixtureB.getBody().setLinearVelocity(vBunny);
+            }
+        }
+
+        @Override
+        public void beginContact(Contact contact) {
+
+        }
+
+        @Override
+        public void endContact(Contact contact) {
+
         }
     }
 
@@ -102,7 +167,6 @@ public class CarrotGame extends ApplicationAdapter {
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(camera.viewportWidth*3, 1);
         fixtureDef.shape = shape;
-
         ground = world.createBody(bodyDef);
         ground.createFixture(fixtureDef);
         ground.setTransform(-camera.viewportWidth, 0, 0);
@@ -130,15 +194,16 @@ public class CarrotGame extends ApplicationAdapter {
         sprite.draw(batch);
     }
 
-    private Body createBody(String name, float x, float y, float rotation) {
+    private Body createBody(String name, float x, float y, float rotation, BodyDef.BodyType bt) {
         BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
+        bodyDef.type = bt;
         bodyDef.fixedRotation = true;
         FixtureDef fd = new FixtureDef();
         fd.density = 2.0f;
         fd.friction = 0.0f;
         fd.restitution = 1.0f;
         Body body = world.createBody(bodyDef);
+        body.setUserData(name);
         float scale = sprites.get(name.split("\\.")[0]).getWidth();
         physicsLoader.attachFixture(body, name, fd, scale);
         body.setTransform(x, y, rotation);
@@ -154,8 +219,10 @@ public class CarrotGame extends ApplicationAdapter {
         // Prepare physics engine
         Box2D.init();
         debugRenderer = new Box2DDebugRenderer();
-        world = new World(new Vector2(0, -200), true);
+        world = new World(new Vector2(0, -GRAV), true);
         physicsLoader = new BodyEditorLoader(Gdx.files.internal("physics.json"));
+        collisionFilter = new CustomListener();
+        world.setContactListener(collisionFilter);
 
         // Prepare sprites and drawing tools
         batch = new SpriteBatch();
@@ -165,7 +232,7 @@ public class CarrotGame extends ApplicationAdapter {
         // Generate the beginning of the level
         level = new Level();
 
-        bunny = createBody("bunny1_walk1.png", 10, MAX_JUMP, 0);
+        bunny = createBody("bunny1_walk1.png", 10, 10, 0, BodyDef.BodyType.DynamicBody);
     }
 
     @Override
@@ -181,10 +248,10 @@ public class CarrotGame extends ApplicationAdapter {
 
         Vector2 vBunny = bunny.getLinearVelocity();
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-            vBunny.x = -40.0f;
+            vBunny.x = -80.0f;
             bunny.setLinearVelocity(vBunny);
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            vBunny.x = 40.0f;
+            vBunny.x = 80.0f;
         } else {
             vBunny.x = 0.0f;
         }
@@ -205,13 +272,13 @@ public class CarrotGame extends ApplicationAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         batch.begin();
 
-        Vector2 position = bunny.getPosition();
-        float degrees = (float) Math.toDegrees(bunny.getAngle());
-        drawSprite("bunny1_walk1", position.x, position.y, degrees);
-
         for (Vector2 p : level.platforms) {
             drawSprite("ground_grass", p.x, p.y, 0);
         }
+
+        Vector2 position = bunny.getPosition();
+        float degrees = (float) Math.toDegrees(bunny.getAngle());
+        drawSprite("bunny1_walk1", position.x, position.y, degrees);
 
         batch.end();
         debugRenderer.render(world, camera.combined);
