@@ -59,8 +59,9 @@ public class GameScreen implements Screen {
     static final int POSITION_ITERATIONS = 2;
     float accumulator = 0;
 
-    static final float MAX_JUMP = 40.0f;
-    static final float GRAV = 250.0f;
+    static final float MAX_JUMP = 30.0f;
+    static final float MAX_VELX = 1.5f;
+    static final float GRAV = 200.0f;
     static final float BOUNCE_VEL = (float)(Math.sqrt(2*GRAV*MAX_JUMP));
 
     private class Level {
@@ -276,7 +277,9 @@ public class GameScreen implements Screen {
             Matrix4 matrix = new Matrix4();
             Gdx.input.getRotationMatrix(matrix.val);
             float pitch = matrix.getValues()[9];
-            vBunny.x = 1000.0f * pitch * pitch;
+            Vector2 pBunny = bunny.getPosition();
+            pBunny.x += Math.max(Math.min(5.0f * pitch, MAX_VELX), -MAX_VELX);
+            bunny.setTransform(pBunny, bunny.getAngle());
         }
 
         bunny.setLinearVelocity(vBunny);
