@@ -22,4 +22,8 @@ public class CarrotGame extends Game {
         menuScreen.isMenuDisplayed = true;
     }
 
+    public void switchToLost(int s) {
+        this.setScreen(new LostScreen(this, s));
+    }
+
 }

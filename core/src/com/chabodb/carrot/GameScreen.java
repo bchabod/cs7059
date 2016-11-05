@@ -328,7 +328,7 @@ public class GameScreen implements Screen {
         }
 
         if (bunny.getPosition().y < camera.position.y - camera.viewportHeight/2) {
-            game.switchToMenu();
+            game.switchToLost(score);
         }
     }
 
