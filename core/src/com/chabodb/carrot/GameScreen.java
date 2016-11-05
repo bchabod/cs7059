@@ -52,7 +52,7 @@ public class GameScreen implements Screen {
     CarrotGame game;
     BitmapFont font;
     GlyphLayout layout;
-    int score;
+    int score, scoreCarrots;
 
     // Magic numbers for physics simulation
     static final float SCALE = 0.03f;
@@ -70,6 +70,7 @@ public class GameScreen implements Screen {
     private class Platform {
         Vector2 pos;
         boolean isCarrot;
+        Body carrot;
 
         Platform(Vector2 v, boolean isC) {
             pos = v;
@@ -104,10 +105,16 @@ public class GameScreen implements Screen {
         void generate() {
             for(float yPos = threshold + 2*platformHeight; yPos < threshold + 2*camera.viewportHeight;) {
                 int xPos = randomInt(0, (int)(camera.viewportWidth - platformWidth));
-                platforms.add(new Platform(new Vector2(xPos, yPos), randomInt(0,10)%4 == 0));
+                Platform p = new Platform(new Vector2(xPos, yPos), randomInt(0,10)%4 == 0);
+                platforms.add(p);
 
                 // Generate associated physics object
                 createBody("ground_grass.png", xPos, yPos, 0, BodyDef.BodyType.StaticBody);
+                if (p.isCarrot) {
+                    float x = p.pos.x + level.platformWidth/2 - level.carrotWidth/1.5f;
+                    float y = p.pos.y + level.platformHeight + level.carrotHeight/4;
+                    p.carrot = createBody("carrot.png", x, y, 0, BodyDef.BodyType.StaticBody);
+                }
 
                 yPos += randomInt(3*platformHeight, MAX_JUMP/3);
             }
@@ -140,11 +147,23 @@ public class GameScreen implements Screen {
                 return;
             String sA = fixtureA.getBody().getUserData().toString();
             String sB = fixtureB.getBody().getUserData().toString();
-            if (sA.equals("bunny1_walk1.png") && sB.equals("ground_grass.png")) {
-                contact.setEnabled(handlePlatform(fixtureA, fixtureB));
+            if (sA.equals("bunny1_walk1.png")) {
+                if (sB.equals("ground_grass.png")) {
+                    contact.setEnabled(handlePlatform(fixtureA, fixtureB));
+                } else if (sB.equals("carrot.png")) {
+                    System.out.println("CARROT");
+                    contact.setEnabled(false);
+                    fixtureB.getBody().setUserData("remove");
+                }
             }
             else if (sB.equals("bunny1_walk1.png") && sA.equals("ground_grass.png")) {
-                contact.setEnabled(handlePlatform(fixtureB, fixtureA));
+                if (sA.equals("ground_grass.png")) {
+                    contact.setEnabled(handlePlatform(fixtureB, fixtureA));
+                } else if (sA.equals("carrot.png")) {
+                    System.out.println("CARROT");
+                    contact.setEnabled(false);
+                    fixtureA.getBody().setUserData("remove");
+                }
             }
         }
 
@@ -156,15 +175,19 @@ public class GameScreen implements Screen {
             Fixture fixtureB = contact.getFixtureB();
             Object uA = fixtureA.getBody().getUserData();
             Object uB = fixtureB.getBody().getUserData();
-            if (uA != null && uA.toString().equals("bunny1_walk1.png")) {
-                Vector2 vBunny = fixtureA.getBody().getLinearVelocity();
-                vBunny.y = BOUNCE_VEL;
-                fixtureA.getBody().setLinearVelocity(vBunny);
+            if (uA != null && uB != null && uA.toString().equals("bunny1_walk1.png")) {
+                if (uB.toString().startsWith("ground")) {
+                    Vector2 vBunny = fixtureA.getBody().getLinearVelocity();
+                    vBunny.y = BOUNCE_VEL;
+                    fixtureA.getBody().setLinearVelocity(vBunny);
+                }
             }
-            else if (uB != null && uB.toString().equals("bunny1_walk1.png")) {
-                Vector2 vBunny = fixtureB.getBody().getLinearVelocity();
-                vBunny.y = BOUNCE_VEL;
-                fixtureB.getBody().setLinearVelocity(vBunny);
+            else if (uB != null && uA != null && uB.toString().equals("bunny1_walk1.png")) {
+                if (uA.toString().startsWith("ground")) {
+                    Vector2 vBunny = fixtureB.getBody().getLinearVelocity();
+                    vBunny.y = BOUNCE_VEL;
+                    fixtureB.getBody().setLinearVelocity(vBunny);
+                }
             }
         }
 
@@ -206,6 +229,7 @@ public class GameScreen implements Screen {
         shape.setAsBox(camera.viewportWidth*3, 1);
         fixtureDef.shape = shape;
         ground = world.createBody(bodyDef);
+        ground.setUserData("ground");
         ground.createFixture(fixtureDef);
         ground.setTransform(-camera.viewportWidth, 0, 0);
 
@@ -338,6 +362,12 @@ public class GameScreen implements Screen {
         for (Platform p : level.platforms) {
             drawSprite("ground_grass", p.pos.x, p.pos.y, 0);
             if (p.isCarrot) {
+                if (p.carrot.getUserData() == "remove") {
+                    p.isCarrot = false;
+                    p.carrot.setActive(false);
+                    p.carrot = null;
+                    scoreCarrots += 50;
+                }
                 drawSprite("carrot", p.pos.x + level.platformWidth/2 - level.carrotWidth/1.5f, p.pos.y + level.platformHeight + level.carrotHeight/4, 0);
             }
         }
@@ -354,13 +384,13 @@ public class GameScreen implements Screen {
         if ((camera.position.y - camera.viewportHeight/2) > score) {
             score = (int)(camera.position.y - camera.viewportHeight/2);
         }
-        layout.setText(font, "" + score);
+        layout.setText(font, "" + (score + scoreCarrots));
         float textY = camera.position.y + camera.viewportHeight/2 - layout.height*0.5f;
         float textX = camera.position.x + camera.viewportWidth/2 - layout.width*1.2f;
-        font.draw(batch, "" + score, textX, textY);
+        font.draw(batch, "" + (score + scoreCarrots), textX, textY);
 
         batch.end();
-        debugRenderer.render(world, camera.combined);
+        // debugRenderer.render(world, camera.combined);
         if (level.threshold - camera.position.y < camera.viewportHeight) {
             level.generate();
         }
@@ -372,7 +402,7 @@ public class GameScreen implements Screen {
         }
 
         if (bunny.getPosition().y < camera.position.y - camera.viewportHeight/2) {
-            game.switchToLost(score);
+            game.switchToLost(score + scoreCarrots);
         }
     }
 
