@@ -63,6 +63,7 @@ public class GameScreen implements Screen {
     static final float MAX_VELX = 1.5f;
     static final float GRAV = 200.0f;
     static final float BOUNCE_VEL = (float)(Math.sqrt(2*GRAV*MAX_JUMP));
+    static final float SPEED_CLOUD = 0.08f;
 
     private class Platform {
         Vector2 pos;
@@ -76,16 +77,19 @@ public class GameScreen implements Screen {
 
     private class Level {
         List<Platform> platforms = new ArrayList<Platform>();
+        List<Vector2> clouds = new ArrayList<Vector2>();
         float threshold = MAX_JUMP/4;
         float lowerBound = 0;
         float platformWidth, platformHeight;
         float carrotWidth, carrotHeight;
+        float cloudWidth;
 
         Level() {
             platformWidth = sprites.get("ground_grass").getWidth();
             platformHeight = sprites.get("ground_grass").getHeight();
             carrotWidth = sprites.get("carrot").getWidth();
             carrotHeight = sprites.get("carrot").getHeight();
+            cloudWidth = sprites.get("cloud").getWidth();
         }
 
         int randomInt(int Min, int Max) {
@@ -111,6 +115,11 @@ public class GameScreen implements Screen {
                 Vector2 platform = iterator.next().pos;
                 if (platform.y < lowerBound)
                     iterator.remove();
+            }
+            if (randomInt(0,10)%2 < 3) {
+                float xPos = randomInt(0, camera.viewportWidth/2 + cloudWidth);
+                float yPos = threshold + camera.viewportHeight;
+                clouds.add(new Vector2(xPos, yPos));
             }
         }
     }
@@ -205,8 +214,13 @@ public class GameScreen implements Screen {
         Array<TextureAtlas.AtlasRegion> regions = textureAtlas.getRegions();
         for (TextureAtlas.AtlasRegion region : regions) {
             Sprite sprite = textureAtlas.createSprite(region.name);
-            float width = sprite.getWidth() * (region.name.equals("carrot") ? SCALE*2 : SCALE);
-            float height = sprite.getHeight() * (region.name.equals("carrot") ? SCALE*2 : SCALE);
+            float realScale = SCALE;
+            if (region.name.equals("carrot"))
+                realScale *= 2.0f;
+            if (region.name.equals("cloud"))
+                realScale *= 4.0f;
+            float width = sprite.getWidth() * realScale;
+            float height = sprite.getHeight() * realScale;
             sprite.setSize(width, height);
             sprite.setOrigin(0, 0);
             sprites.put(region.name, sprite);
@@ -215,6 +229,8 @@ public class GameScreen implements Screen {
 
     private void drawSprite(String name, float x, float y, float degrees) {
         Sprite sprite = sprites.get(name);
+        float alpha = (name.equals("cloud") ? 0.25f : 1.0f);
+        sprite.setColor(sprite.getColor().r, sprite.getColor().g, sprite.getColor().b, alpha);
         sprite.setPosition(x, y);
         sprite.setRotation(degrees);
         sprite.setOrigin(0f, 0f);
@@ -317,6 +333,11 @@ public class GameScreen implements Screen {
             if (p.isCarrot) {
                 drawSprite("carrot", p.pos.x + level.platformWidth/2 - level.carrotWidth/1.5f, p.pos.y + level.platformHeight + level.carrotHeight/4, 0);
             }
+        }
+
+        for (Vector2 c : level.clouds) {
+            drawSprite("cloud", c.x, c.y, 0);
+            c.x -= SPEED_CLOUD;
         }
 
         Vector2 position = bunny.getPosition();
