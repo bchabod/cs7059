@@ -6,10 +6,12 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -42,7 +44,7 @@ public class LostScreen implements Screen {
     @Override
     public void show() {
         camera = new OrthographicCamera();
-        viewport = new ExtendViewport(100, 100, camera);
+        viewport = new ExtendViewport(1000, 1000, camera);
         batch = new SpriteBatch();
         gameTitle = new Image(new TextureRegion(new Texture(Gdx.files.internal("game_over.png"))));
         gameTitle.setScale(0.5f);
@@ -50,9 +52,13 @@ public class LostScreen implements Screen {
         stage.addActor(gameTitle);
         Gdx.input.setInputProcessor(stage);
 
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("pamela.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 80;
+        font = generator.generateFont(parameter);
+        generator.dispose();
+
         layout = new GlyphLayout();
-        font = new BitmapFont();
-        font.getData().setScale(0.4f);
         font.setColor(Color.ORANGE);
     }
 
@@ -73,7 +79,7 @@ public class LostScreen implements Screen {
         String text = "Your bunny died! \nYour final score was: " + score + "\n";
         text += "Please press screen to continue...";
         layout.setText(font, text);
-        float textY = camera.position.y - layout.height/2;
+        float textY = camera.position.y + stage.getViewport().getWorldHeight() * 0.2f -  layout.height/2;
         float textX = camera.position.x - layout.width/2;
         font.draw(batch, text, textX, textY);
         batch.end();

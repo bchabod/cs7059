@@ -7,11 +7,13 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -61,7 +63,7 @@ public class GameScreen implements Screen {
 
     static final float MAX_JUMP = 30.0f;
     static final float MAX_VELX = 1.5f;
-    static final float GRAV = 200.0f;
+    static final float GRAV = 150.0f;
     static final float BOUNCE_VEL = (float)(Math.sqrt(2*GRAV*MAX_JUMP));
     static final float SPEED_CLOUD = 0.08f;
 
@@ -217,7 +219,7 @@ public class GameScreen implements Screen {
             float realScale = SCALE;
             if (region.name.equals("carrot"))
                 realScale *= 2.0f;
-            if (region.name.equals("cloud"))
+            else if (region.name.equals("cloud"))
                 realScale *= 4.0f;
             float width = sprite.getWidth() * realScale;
             float height = sprite.getHeight() * realScale;
@@ -272,9 +274,14 @@ public class GameScreen implements Screen {
         textureAtlas = new TextureAtlas("pack.atlas");
         generateSprites();
         layout = new GlyphLayout();
-        font = new BitmapFont();
-        font.getData().setScale(0.25f);
-        font.setColor(Color.ORANGE);
+
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("pamela.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 80;
+        font = generator.generateFont(parameter);
+        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        font.getData().setScale(0.10f);
+        generator.dispose();
 
         // Generate the beginning of the level
         level = new Level();
@@ -348,7 +355,7 @@ public class GameScreen implements Screen {
             score = (int)(camera.position.y - camera.viewportHeight/2);
         }
         layout.setText(font, "" + score);
-        float textY = camera.position.y + camera.viewportHeight/2 - layout.height;
+        float textY = camera.position.y + camera.viewportHeight/2 - layout.height*0.5f;
         float textX = camera.position.x + camera.viewportWidth/2 - layout.width*1.2f;
         font.draw(batch, "" + score, textX, textY);
 
