@@ -64,15 +64,28 @@ public class GameScreen implements Screen {
     static final float GRAV = 200.0f;
     static final float BOUNCE_VEL = (float)(Math.sqrt(2*GRAV*MAX_JUMP));
 
+    private class Platform {
+        Vector2 pos;
+        boolean isCarrot;
+
+        Platform(Vector2 v, boolean isC) {
+            pos = v;
+            isCarrot = isC;
+        }
+    }
+
     private class Level {
-        List<Vector2> platforms = new ArrayList<Vector2>();
+        List<Platform> platforms = new ArrayList<Platform>();
         float threshold = MAX_JUMP/4;
         float lowerBound = 0;
         float platformWidth, platformHeight;
+        float carrotWidth, carrotHeight;
 
         Level() {
             platformWidth = sprites.get("ground_grass").getWidth();
             platformHeight = sprites.get("ground_grass").getHeight();
+            carrotWidth = sprites.get("carrot").getWidth();
+            carrotHeight = sprites.get("carrot").getHeight();
         }
 
         int randomInt(int Min, int Max) {
@@ -85,17 +98,17 @@ public class GameScreen implements Screen {
         void generate() {
             for(float yPos = threshold + 2*platformHeight; yPos < threshold + 2*camera.viewportHeight;) {
                 int xPos = randomInt(0, (int)(camera.viewportWidth - platformWidth));
-                platforms.add(new Vector2(xPos, yPos));
+                platforms.add(new Platform(new Vector2(xPos, yPos), randomInt(0,10)%4 == 0));
 
                 // Generate associated physics object
                 createBody("ground_grass.png", xPos, yPos, 0, BodyDef.BodyType.StaticBody);
 
-                yPos += randomInt(2*platformHeight, MAX_JUMP/3);
+                yPos += randomInt(3*platformHeight, MAX_JUMP/3);
             }
             lowerBound = camera.position.y - camera.viewportHeight/2;
             threshold += 2*camera.viewportHeight;
-            for (Iterator<Vector2> iterator = platforms.iterator(); iterator.hasNext(); ) {
-                Vector2 platform = iterator.next();
+            for (Iterator<Platform> iterator = platforms.iterator(); iterator.hasNext(); ) {
+                Vector2 platform = iterator.next().pos;
                 if (platform.y < lowerBound)
                     iterator.remove();
             }
@@ -192,8 +205,8 @@ public class GameScreen implements Screen {
         Array<TextureAtlas.AtlasRegion> regions = textureAtlas.getRegions();
         for (TextureAtlas.AtlasRegion region : regions) {
             Sprite sprite = textureAtlas.createSprite(region.name);
-            float width = sprite.getWidth() * SCALE;
-            float height = sprite.getHeight() * SCALE;
+            float width = sprite.getWidth() * (region.name.equals("carrot") ? SCALE*2 : SCALE);
+            float height = sprite.getHeight() * (region.name.equals("carrot") ? SCALE*2 : SCALE);
             sprite.setSize(width, height);
             sprite.setOrigin(0, 0);
             sprites.put(region.name, sprite);
@@ -299,8 +312,11 @@ public class GameScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         batch.begin();
 
-        for (Vector2 p : level.platforms) {
-            drawSprite("ground_grass", p.x, p.y, 0);
+        for (Platform p : level.platforms) {
+            drawSprite("ground_grass", p.pos.x, p.pos.y, 0);
+            if (p.isCarrot) {
+                drawSprite("carrot", p.pos.x + level.platformWidth/2 - level.carrotWidth/1.5f, p.pos.y + level.platformHeight + level.carrotHeight/4, 0);
+            }
         }
 
         Vector2 position = bunny.getPosition();
