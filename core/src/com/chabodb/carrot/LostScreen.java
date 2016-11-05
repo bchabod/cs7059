@@ -59,7 +59,7 @@ public class LostScreen implements Screen {
         generator.dispose();
 
         layout = new GlyphLayout();
-        font.setColor(Color.ORANGE);
+        // font.setColor(Color.ORANGE);
     }
 
     @Override

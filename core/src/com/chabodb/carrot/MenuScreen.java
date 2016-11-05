@@ -28,6 +28,7 @@ public class MenuScreen implements Screen {
     Image gameTitle;
     CarrotGame game;
     boolean isMenuDisplayed;
+    double time = 0;
 
     public MenuScreen(CarrotGame g) {
         super();
@@ -49,6 +50,7 @@ public class MenuScreen implements Screen {
         batch = new SpriteBatch();
         gameTitle = new Image(new TextureRegion(new Texture(Gdx.files.internal("title.png"))));
         gameTitle.setScale(0.5f);
+        gameTitle.setOrigin(gameTitle.getWidth()/2, gameTitle.getHeight()/2);
         bPlay = createButton("button_play.png");
 
         bPlay.addListener(new ClickListener()
@@ -73,6 +75,12 @@ public class MenuScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0.57f, 0.77f, 0.85f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        time += 0.1;
+
+        gameTitle.setRotation((float)Math.sin(time)*15.0f);
+        gameTitle.setScale(0.5f + ((float)(Math.abs(Math.sin(time/2)))/4));
+        // bScores.setScale((float)Math.tan(time)*2.0f);
+
         batch.begin();
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
@@ -84,8 +92,8 @@ public class MenuScreen implements Screen {
         stage.getViewport().update(width, height, true);
         batch.setProjectionMatrix(camera.combined);
         float w = stage.getViewport().getWorldWidth();
-        float h = stage.getViewport().getWorldHeight();
-        gameTitle.setPosition(w/2 - gameTitle.getWidth()/2 * gameTitle.getScaleX(), h/2 + gameTitle.getHeight()/2);
+        float h = stage.getViewport().getWorldHeight() - 50;
+        gameTitle.setPosition(w/2 - gameTitle.getWidth() * gameTitle.getScaleX(), h/2 + gameTitle.getHeight()/4);
         bPlay.setPosition(w/2 - bPlay.getWidth()/2, h/2 - bPlay.getHeight()/2);
         bScores.setPosition(w/2 - bScores.getWidth()/2, bPlay.getY() - 2*bScores.getHeight());
     }
