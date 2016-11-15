@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -53,6 +54,8 @@ public class GameScreen implements Screen {
     BitmapFont font;
     GlyphLayout layout;
     int score, scoreCarrots;
+    int counterJetpack = 0;
+    ParticleEffect carrotParticle;
 
     // Magic numbers for physics simulation
     static final float SCALE = 0.03f;
@@ -69,12 +72,15 @@ public class GameScreen implements Screen {
 
     private class Platform {
         Vector2 pos;
-        boolean isCarrot;
+        // 0 NORMAL, 1 CARROT, 2 SPRING, 3 JETPACK
+        int mode;
         Body carrot;
+        Body spring;
+        Body jetpack;
 
-        Platform(Vector2 v, boolean isC) {
+        Platform(Vector2 v, int m) {
             pos = v;
-            isCarrot = isC;
+            mode = m;
         }
     }
 
@@ -85,6 +91,8 @@ public class GameScreen implements Screen {
         float lowerBound = 0;
         float platformWidth, platformHeight;
         float carrotWidth, carrotHeight;
+        float springWidth, springHeight;
+        float jetpackWidth, jetpackHeight;
         float cloudWidth;
 
         Level() {
@@ -92,6 +100,10 @@ public class GameScreen implements Screen {
             platformHeight = sprites.get("ground_grass").getHeight();
             carrotWidth = sprites.get("carrot").getWidth();
             carrotHeight = sprites.get("carrot").getHeight();
+            springWidth = sprites.get("spring").getWidth();
+            springHeight = sprites.get("spring").getHeight();
+            jetpackWidth = sprites.get("jetpack").getHeight();
+            jetpackHeight = sprites.get("jetpack").getHeight();
             cloudWidth = sprites.get("cloud").getWidth();
         }
 
@@ -105,15 +117,30 @@ public class GameScreen implements Screen {
         void generate() {
             for(float yPos = threshold + 2*platformHeight; yPos < threshold + 2*camera.viewportHeight;) {
                 int xPos = randomInt(0, (int)(camera.viewportWidth - platformWidth));
-                Platform p = new Platform(new Vector2(xPos, yPos), randomInt(0,10)%4 == 0);
+                int mode;
+                if (randomInt(0,10)%4 != 0) {
+                    mode = 0;
+                } else {
+                    int rnd = randomInt(0,10)%3;
+                    mode = rnd + 1;
+                }
+                Platform p = new Platform(new Vector2(xPos, yPos), mode);
                 platforms.add(p);
 
                 // Generate associated physics object
                 createBody("ground_grass.png", xPos, yPos, 0, BodyDef.BodyType.StaticBody);
-                if (p.isCarrot) {
+                if (p.mode == 1) {
                     float x = p.pos.x + level.platformWidth/2 - level.carrotWidth/1.5f;
                     float y = p.pos.y + level.platformHeight + level.carrotHeight/4;
                     p.carrot = createBody("carrot.png", x, y, 0, BodyDef.BodyType.StaticBody);
+                } else if (p.mode == 2) {
+                    float x = p.pos.x + level.platformWidth/2 - level.springWidth/1.5f;
+                    float y = p.pos.y + level.platformHeight + level.springHeight/4;
+                    p.spring = createBody("spring.png", x, y, 0, BodyDef.BodyType.StaticBody);
+                } else if (p.mode == 3) {
+                    float x = p.pos.x + level.platformWidth/2 - level.jetpackWidth/1.5f;
+                    float y = p.pos.y + level.platformHeight + level.jetpackHeight/4;
+                    p.jetpack = createBody("jetpack.png", x, y, 0, BodyDef.BodyType.StaticBody);
                 }
 
                 yPos += randomInt(3*platformHeight, MAX_JUMP/3);
@@ -151,8 +178,22 @@ public class GameScreen implements Screen {
                 if (sB.equals("ground_grass.png")) {
                     contact.setEnabled(handlePlatform(fixtureA, fixtureB));
                 } else if (sB.equals("carrot.png")) {
-                    System.out.println("CARROT");
                     contact.setEnabled(false);
+                    fixtureB.getBody().setUserData("remove");
+                } else if (sB.equals("spring.png")) {
+                    boolean isEnabled = handlePlatform(fixtureA, fixtureB);
+                    contact.setEnabled(isEnabled);
+                    if (isEnabled) {
+                        if (fixtureB.getBody().getUserData() != "remove") {
+                            fixtureA.getBody().applyLinearImpulse(0.0f, 1000.0f, 0.0f, 0.0f, true);
+                            fixtureB.getBody().setUserData("remove");
+                        }
+                    }
+                } else if (sB.equals("jetpack.png")) {
+                    contact.setEnabled(false);
+                    fixtureA.getBody().setGravityScale(0.1f);
+                    fixtureA.getBody().applyLinearImpulse(0.0f, 1000.0f, 0.0f, 0.0f, true);
+                    counterJetpack = 100;
                     fixtureB.getBody().setUserData("remove");
                 }
             }
@@ -160,8 +201,22 @@ public class GameScreen implements Screen {
                 if (sA.equals("ground_grass.png")) {
                     contact.setEnabled(handlePlatform(fixtureB, fixtureA));
                 } else if (sA.equals("carrot.png")) {
-                    System.out.println("CARROT");
                     contact.setEnabled(false);
+                    fixtureA.getBody().setUserData("remove");
+                }  else if (sA.equals("spring.png")) {
+                    boolean isEnabled = handlePlatform(fixtureB, fixtureA);
+                    contact.setEnabled(isEnabled);
+                    if (isEnabled) {
+                        if (fixtureA.getBody().getUserData() != "remove") {
+                            fixtureB.getBody().applyLinearImpulse(0.0f, 1000.0f, 0.0f, 0.0f, true);
+                            fixtureA.getBody().setUserData("remove");
+                        }
+                    }
+                } else if (sA.equals("jetpack.png")) {
+                    contact.setEnabled(false);
+                    fixtureB.getBody().setGravityScale(0.1f);
+                    fixtureB.getBody().applyLinearImpulse(0.0f, 1000.0f, 0.0f, 0.0f, true);
+                    counterJetpack = 100;
                     fixtureA.getBody().setUserData("remove");
                 }
             }
@@ -310,6 +365,12 @@ public class GameScreen implements Screen {
         // Generate the beginning of the level
         level = new Level();
 
+        // Prepare particle FX
+        carrotParticle = new ParticleEffect();
+        carrotParticle.load(Gdx.files.internal("carrot_eaten.party"), Gdx.files.internal(""));
+        carrotParticle.start();
+        carrotParticle.scaleEffect(0.1f);
+
         bunny = createBody("bunny1_walk1.png", 10, 10, 0, BodyDef.BodyType.DynamicBody);
     }
 
@@ -357,18 +418,43 @@ public class GameScreen implements Screen {
         stepWorld();
         Gdx.gl.glClearColor(0.57f, 0.77f, 0.85f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
         batch.begin();
+
+        if (!carrotParticle.isComplete()) {
+            carrotParticle.update(Gdx.graphics.getDeltaTime());
+            carrotParticle.draw(batch);
+        }
 
         for (Platform p : level.platforms) {
             drawSprite("ground_grass", p.pos.x, p.pos.y, 0);
-            if (p.isCarrot) {
+            if (p.mode == 1) {
+                Vector2 cPos = p.carrot.getPosition();
                 if (p.carrot.getUserData() == "remove") {
-                    p.isCarrot = false;
+                    p.mode = 0;
                     p.carrot.setActive(false);
                     p.carrot = null;
                     scoreCarrots += 50;
+                    carrotParticle.getEmitters().first().setPosition(cPos.x + level.carrotWidth/2, cPos.y);
+                    if (carrotParticle.isComplete())
+                        carrotParticle.reset();
                 }
-                drawSprite("carrot", p.pos.x + level.platformWidth/2 - level.carrotWidth/1.5f, p.pos.y + level.platformHeight + level.carrotHeight/4, 0);
+                drawSprite("carrot", cPos.x, cPos.y, 0);
+            } else if (p.mode == 2) {
+                Vector2 cPos = p.spring.getPosition();
+                if (p.spring.getUserData() == "remove") {
+                    drawSprite("spring_out", cPos.x, cPos.y, 0);
+                } else {
+                    drawSprite("spring", cPos.x, cPos.y, 0);
+                }
+            } else if (p.mode == 3) {
+                Vector2 cPos = p.jetpack.getPosition();
+                if (p.jetpack.getUserData() == "remove") {
+                    p.mode = 0;
+                    p.jetpack.setActive(false);
+                    p.jetpack = null;
+                }
+                drawSprite("jetpack", cPos.x, cPos.y, 0);
             }
         }
 
@@ -379,6 +465,12 @@ public class GameScreen implements Screen {
 
         Vector2 position = bunny.getPosition();
         float degrees = (float) Math.toDegrees(bunny.getAngle());
+        if (counterJetpack > 0) {
+            counterJetpack--;
+            if (counterJetpack == 0)
+                bunny.setGravityScale(1.0f);
+            drawSprite("jetpack", position.x - 1, position.y, degrees);
+        }
         drawSprite("bunny1_walk1", position.x, position.y, degrees);
 
         if ((camera.position.y - camera.viewportHeight/2) > score) {

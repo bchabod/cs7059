@@ -86,7 +86,7 @@ public class LostScreen implements Screen {
         batch.end();
 
         batch.begin();
-        String text = "Your bunny died! \nYour final score was: " + score + "\n";
+        String text = "Your bunny died! \nYour final score is: " + score + "\n";
         text += "Please press screen to continue...";
         layout.setText(font, text);
         float textY = camera.position.y + stage.getViewport().getWorldHeight() * 0.2f -  layout.height/2;
