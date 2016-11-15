@@ -2,6 +2,7 @@ package com.chabodb.carrot;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -18,8 +19,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class LostScreen implements Screen {
     SpriteBatch batch;
@@ -29,7 +35,6 @@ public class LostScreen implements Screen {
     ImageButton bPlay, bScores;
     Image gameTitle;
     CarrotGame game;
-    boolean isMenuDisplayed;
     BitmapFont font;
     GlyphLayout layout;
     int score;
@@ -38,7 +43,6 @@ public class LostScreen implements Screen {
         super();
         game = g;
         score = s;
-        isMenuDisplayed = false;
     }
 
     @Override
@@ -65,6 +69,12 @@ public class LostScreen implements Screen {
     @Override
     public void render(float delta) {
         if(Gdx.input.isTouched()) {
+
+            FileHandle file = Gdx.files.local("scores.txt");
+            Date date = new Date(TimeUtils.millis());
+            DateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+            file.writeString("\n" + df.format(date) + " | " + score, true);
+
             game.switchToMenu();
         }
         Gdx.gl.glClearColor(0.57f, 0.77f, 0.85f, 1);

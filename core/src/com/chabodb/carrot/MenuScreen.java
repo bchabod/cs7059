@@ -51,8 +51,8 @@ public class MenuScreen implements Screen {
         gameTitle = new Image(new TextureRegion(new Texture(Gdx.files.internal("title.png"))));
         gameTitle.setScale(0.5f);
         gameTitle.setOrigin(gameTitle.getWidth()/2, gameTitle.getHeight()/2);
-        bPlay = createButton("button_play.png");
 
+        bPlay = createButton("button_play.png");
         bPlay.addListener(new ClickListener()
         {
             @Override
@@ -64,6 +64,17 @@ public class MenuScreen implements Screen {
         });
 
         bScores = createButton("button_scores.png");
+        bScores.addListener(new ClickListener()
+        {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (!isMenuDisplayed)
+                    return;
+                game.switchToScores();
+            }
+        });
+
+
         stage = new Stage(new ScreenViewport());
         stage.addActor(bPlay);
         stage.addActor(bScores);
