@@ -55,7 +55,7 @@ public class GameScreen implements Screen {
     GlyphLayout layout;
     int score, scoreCarrots;
     int counterJetpack = 0;
-    ParticleEffect carrotParticle;
+    ParticleEffect carrotParticle, fireParticle;
 
     // Magic numbers for physics simulation
     static final float SCALE = 0.03f;
@@ -194,6 +194,8 @@ public class GameScreen implements Screen {
                     fixtureA.getBody().setGravityScale(0.1f);
                     fixtureA.getBody().applyLinearImpulse(0.0f, 1000.0f, 0.0f, 0.0f, true);
                     counterJetpack = 100;
+                    fireParticle.getEmitters().get(0).getTransparency().setHigh(1.0f);
+                    fireParticle.reset();
                     fixtureB.getBody().setUserData("remove");
                 }
             }
@@ -217,6 +219,8 @@ public class GameScreen implements Screen {
                     fixtureB.getBody().setGravityScale(0.1f);
                     fixtureB.getBody().applyLinearImpulse(0.0f, 1000.0f, 0.0f, 0.0f, true);
                     counterJetpack = 100;
+                    fireParticle.getEmitters().get(0).getTransparency().setHigh(1.0f);
+                    fireParticle.reset();
                     fixtureA.getBody().setUserData("remove");
                 }
             }
@@ -371,6 +375,11 @@ public class GameScreen implements Screen {
         carrotParticle.start();
         carrotParticle.scaleEffect(0.1f);
 
+        fireParticle = new ParticleEffect();
+        fireParticle.load(Gdx.files.internal("fire.party"), Gdx.files.internal(""));
+        fireParticle.start();
+        fireParticle.scaleEffect(0.1f);
+
         bunny = createBody("bunny1_walk1.png", 10, 10, 0, BodyDef.BodyType.DynamicBody);
     }
 
@@ -469,8 +478,16 @@ public class GameScreen implements Screen {
             counterJetpack--;
             if (counterJetpack == 0)
                 bunny.setGravityScale(1.0f);
+            if (counterJetpack < 100) {
+                float alpha = 1.0f - (100 - counterJetpack) * 0.01f;
+                fireParticle.getEmitters().get(0).getTransparency().setHigh(alpha);
+            }
             drawSprite("jetpack", position.x - 1, position.y, degrees);
+            fireParticle.setPosition(position.x - 1, position.y + level.jetpackHeight);
+            fireParticle.update(Gdx.graphics.getDeltaTime());
+            fireParticle.draw(batch);
         }
+
         drawSprite("bunny1_walk1", position.x, position.y, degrees);
 
         if ((camera.position.y - camera.viewportHeight/2) > score) {
