@@ -95,7 +95,7 @@ public class GameScreen implements Screen {
         float carrotWidth, carrotHeight;
         float springWidth, springHeight;
         float jetpackWidth, jetpackHeight;
-        float cloudWidth;
+        float enemyWidth, cloudWidth;
 
         Level() {
             platformWidth = sprites.get("ground_grass").getWidth();
@@ -107,6 +107,7 @@ public class GameScreen implements Screen {
             jetpackWidth = sprites.get("jetpack").getHeight();
             jetpackHeight = sprites.get("jetpack").getHeight();
             cloudWidth = sprites.get("cloud").getWidth();
+            enemyWidth = sprites.get("flyMan_jump").getWidth();
         }
 
         int randomInt(int Min, int Max) {
@@ -125,6 +126,10 @@ public class GameScreen implements Screen {
                 } else {
                     int rnd = randomInt(0,10)%3;
                     mode = rnd + 1;
+                    if (mode == 3) {
+                        if (randomInt(0,10)%2 == 0)
+                            mode = 0;
+                    }
                 }
                 Platform p = new Platform(new Vector2(xPos, yPos), mode);
                 platforms.add(p);
@@ -489,9 +494,9 @@ public class GameScreen implements Screen {
 
         for (Body e : level.enemies) {
             drawSprite("flyMan_jump", e.getPosition().x, e.getPosition().y, 0);
-            float deltaX = (float)(Math.sin(timeElapsed) * 35f);
+            float deltaX = (float)(Math.sin(timeElapsed) * (viewport.getWorldWidth()/2 - level.enemyWidth));
             float deltaY = (float)Math.sin(timeElapsed*8) * 0.15f;
-            e.setTransform(camera.position.x + deltaX, e.getPosition().y + deltaY, 0);
+            e.setTransform(camera.position.x - level.enemyWidth/2 + deltaX , e.getPosition().y + deltaY, 0);
         }
 
         Vector2 position = bunny.getPosition();
