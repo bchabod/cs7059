@@ -104,7 +104,7 @@ public class MenuScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
         float w = stage.getViewport().getWorldWidth();
         float h = stage.getViewport().getWorldHeight() - 50;
-        gameTitle.setPosition(w/2 - gameTitle.getWidth() * gameTitle.getScaleX(), h/2 + gameTitle.getHeight()/4);
+        gameTitle.setPosition(w/2 - gameTitle.getWidth() * gameTitle.getScaleX(), h/2 + gameTitle.getHeight()/3);
         bPlay.setPosition(w/2 - bPlay.getWidth()/2, h/2 - bPlay.getHeight()/2);
         bScores.setPosition(w/2 - bScores.getWidth()/2, bPlay.getY() - 2*bScores.getHeight());
     }
