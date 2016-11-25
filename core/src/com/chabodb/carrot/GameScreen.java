@@ -55,6 +55,7 @@ public class GameScreen implements Screen {
     GlyphLayout layout;
     int score, scoreCarrots;
     int counterJetpack = 0;
+    double timeElapsed = 0.0f;
     ParticleEffect carrotParticle, fireParticle;
 
     // Magic numbers for physics simulation
@@ -87,6 +88,7 @@ public class GameScreen implements Screen {
     private class Level {
         List<Platform> platforms = new ArrayList<Platform>();
         List<Vector2> clouds = new ArrayList<Vector2>();
+        List<Body> enemies = new ArrayList<Body>();
         float threshold = MAX_JUMP/4;
         float lowerBound = 0;
         float platformWidth, platformHeight;
@@ -157,6 +159,12 @@ public class GameScreen implements Screen {
                 float yPos = threshold + camera.viewportHeight;
                 clouds.add(new Vector2(xPos, yPos));
             }
+            if (randomInt(0,10)%2 < 3) {
+                float xPos = randomInt(0, camera.viewportWidth/2 + cloudWidth);
+                float yPos = threshold + camera.viewportHeight/2;
+                Body e = createBody("flyMan_jump.png", xPos, yPos, 0, BodyDef.BodyType.StaticBody);
+                enemies.add(e);
+            }
         }
     }
 
@@ -197,9 +205,11 @@ public class GameScreen implements Screen {
                     fireParticle.getEmitters().get(0).getTransparency().setHigh(1.0f);
                     fireParticle.reset();
                     fixtureB.getBody().setUserData("remove");
+                } else if (sB.equals("flyMan_jump.png")) {
+                    game.switchToLost(score + scoreCarrots);
                 }
             }
-            else if (sB.equals("bunny1_walk1.png") && sA.equals("ground_grass.png")) {
+            else if (sB.equals("bunny1_walk1.png")) {
                 if (sA.equals("ground_grass.png")) {
                     contact.setEnabled(handlePlatform(fixtureB, fixtureA));
                 } else if (sA.equals("carrot.png")) {
@@ -222,6 +232,8 @@ public class GameScreen implements Screen {
                     fireParticle.getEmitters().get(0).getTransparency().setHigh(1.0f);
                     fireParticle.reset();
                     fixtureA.getBody().setUserData("remove");
+                } else if (sA.equals("flyMan_jump.png")) {
+                    game.switchToLost(score + scoreCarrots);
                 }
             }
         }
@@ -304,6 +316,8 @@ public class GameScreen implements Screen {
                 realScale *= 2.0f;
             else if (region.name.equals("cloud"))
                 realScale *= 4.0f;
+            else if (region.name.equals("flyMan_jump"))
+                realScale *= 1.80f;
             float width = sprite.getWidth() * realScale;
             float height = sprite.getHeight() * realScale;
             sprite.setSize(width, height);
@@ -392,6 +406,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        timeElapsed += 0.01f;
         Vector2 vBunny = bunny.getLinearVelocity();
 
         boolean available = Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer);
@@ -472,6 +487,13 @@ public class GameScreen implements Screen {
             c.x -= SPEED_CLOUD;
         }
 
+        for (Body e : level.enemies) {
+            drawSprite("flyMan_jump", e.getPosition().x, e.getPosition().y, 0);
+            float deltaX = (float)(Math.sin(timeElapsed) * 35f);
+            float deltaY = (float)Math.sin(timeElapsed*8) * 0.15f;
+            e.setTransform(camera.position.x + deltaX, e.getPosition().y + deltaY, 0);
+        }
+
         Vector2 position = bunny.getPosition();
         float degrees = (float) Math.toDegrees(bunny.getAngle());
         if (counterJetpack > 0) {
@@ -499,7 +521,6 @@ public class GameScreen implements Screen {
         font.draw(batch, "" + (score + scoreCarrots), textX, textY);
 
         batch.end();
-        // debugRenderer.render(world, camera.combined);
         if (level.threshold - camera.position.y < camera.viewportHeight) {
             level.generate();
         }

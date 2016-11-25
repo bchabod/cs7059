@@ -61,13 +61,10 @@ public class ScoreScreen implements Screen {
         int score;
 
         Performance(String s) {
-            System.out.println(s);
             String[] chunks = s.split("\\|");
             try {
                 date = chunks[0];
-                System.out.println(chunks[1]);
                 score = Integer.parseInt(chunks[1].trim());
-                System.out.println("Performance created with score is " + score);
             } catch (Exception e) {}
         }
     }
