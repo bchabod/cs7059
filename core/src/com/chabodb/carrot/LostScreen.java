@@ -27,6 +27,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * Simple class inheriting Screen that represents the game over transition
+ * @author Benoit Chabod
+ */
 public class LostScreen implements Screen {
     SpriteBatch batch;
     OrthographicCamera camera;
@@ -39,6 +43,10 @@ public class LostScreen implements Screen {
     GlyphLayout layout;
     int score;
 
+    /**
+     * Main constructor for the LostScreen class
+     * @param g An instance of the main CarrotGame class
+     */
     public LostScreen(CarrotGame g, int s) {
         super();
         game = g;

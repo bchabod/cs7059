@@ -36,6 +36,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
+/**
+ * Class inheriting Screen that represents the highscores submenu
+ * @author Benoit Chabod
+ */
 public class ScoreScreen implements Screen {
     SpriteBatch batch;
     OrthographicCamera camera;
@@ -48,6 +52,9 @@ public class ScoreScreen implements Screen {
     ShapeRenderer shapeRenderer;
     List<Performance> scores = new ArrayList<Performance>();
 
+    /**
+     * Small class to compare two highscores
+     */
     private class perfComparator implements Comparator<Performance>
     {
         public int compare(Performance p1, Performance p2)
@@ -56,6 +63,9 @@ public class ScoreScreen implements Screen {
         }
     }
 
+    /**
+     * Small class to represent a highscore
+     */
     private class Performance {
         String date;
         int score;
@@ -69,6 +79,10 @@ public class ScoreScreen implements Screen {
         }
     }
 
+    /**
+     * Main constructor for the ScoreScreen class
+     * @param g An instance of the main CarrotGame class
+     */
     public ScoreScreen(CarrotGame g) {
         super();
 

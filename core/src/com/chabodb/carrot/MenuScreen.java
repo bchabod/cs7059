@@ -19,6 +19,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+/**
+ * Simple class inheriting Screen that represents the main menu
+ * @author Benoit Chabod
+ */
 public class MenuScreen implements Screen {
     SpriteBatch batch;
     OrthographicCamera camera;
@@ -30,12 +34,21 @@ public class MenuScreen implements Screen {
     boolean isMenuDisplayed;
     double time = 0;
 
+    /**
+     * Main constructor for the MenuScreen class
+     * @param g An instance of the main CarrotGame class
+     */
     public MenuScreen(CarrotGame g) {
         super();
         game = g;
         isMenuDisplayed = false;
     }
 
+    /**
+     * Useful method to create a button from an image
+     * @param path The relative path to the image
+     * @return An ImageButton instance for the created button
+     */
     private ImageButton createButton(String path) {
         Texture t = new Texture(Gdx.files.internal(path));
         TextureRegion region = new TextureRegion(t);

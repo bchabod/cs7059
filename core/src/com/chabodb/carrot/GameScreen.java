@@ -37,6 +37,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Complex class inheriting Screen that handles the gameplay
+ * Physics and graphics are done here, in the show() overridden method
+ * @author Benoit Chabod
+ */
 public class GameScreen implements Screen {
     final HashMap<String, Sprite> sprites = new HashMap<String, Sprite>();
     TextureAtlas textureAtlas;
@@ -71,6 +76,9 @@ public class GameScreen implements Screen {
     static final float BOUNCE_VEL = (float)(Math.sqrt(2*GRAV*MAX_JUMP));
     static final float SPEED_CLOUD = 0.08f;
 
+    /**
+     * Simple structure to represent a platform
+     */
     private class Platform {
         Vector2 pos;
         // 0 NORMAL, 1 CARROT, 2 SPRING, 3 JETPACK
@@ -85,6 +93,9 @@ public class GameScreen implements Screen {
         }
     }
 
+    /**
+     * Internal class to handle the level generation
+     */
     private class Level {
         List<Platform> platforms = new ArrayList<Platform>();
         List<Vector2> clouds = new ArrayList<Vector2>();
@@ -97,6 +108,9 @@ public class GameScreen implements Screen {
         float jetpackWidth, jetpackHeight;
         float enemyWidth, cloudWidth;
 
+        /**
+         * Constructor for the level generator
+         */
         Level() {
             platformWidth = sprites.get("ground_grass").getWidth();
             platformHeight = sprites.get("ground_grass").getHeight();
@@ -117,6 +131,10 @@ public class GameScreen implements Screen {
             return this.randomInt((int) Min, (int) Max);
         }
 
+        /**
+         * This method is called whenever new platforms need to be generated
+         * Twice the height of the device screen is generated above the player
+         */
         void generate() {
             for(float yPos = threshold + 2*platformHeight; yPos < threshold + 2*camera.viewportHeight;) {
                 int xPos = randomInt(0, (int)(camera.viewportWidth - platformWidth));
@@ -173,6 +191,10 @@ public class GameScreen implements Screen {
         }
     }
 
+    /**
+     * Physics-related class to handle object collisions
+     * There are special cases to handle: bunny with spring, bunny with jetpack, etc
+     */
     private class CustomListener implements ContactListener {
 
         private boolean handlePlatform(Fixture bunny, Fixture platform) {
@@ -278,12 +300,18 @@ public class GameScreen implements Screen {
         }
     }
 
+    /**
+     * Main constructor for the GameScreen class
+     * @param g An instance of the main CarrotGame class
+     */
     public GameScreen(CarrotGame g) {
         game = g;
         score = 0;
     }
 
-    // This function intelligently steps our physics world using a small dt
+    /**
+     * This function intelligently steps our physics world using a small dt
+     */
     private void stepWorld() {
         float delta = Gdx.graphics.getDeltaTime();
         accumulator += Math.min(delta, 0.25f);
@@ -293,6 +321,9 @@ public class GameScreen implements Screen {
         }
     }
 
+    /**
+     * Creates an invisible ground for the beginning of the game
+     */
     private void createGround() {
         if (ground != null)
             world.destroyBody(ground);
@@ -312,6 +343,10 @@ public class GameScreen implements Screen {
         shape.dispose();
     }
 
+    /**
+     * Grabs the assets needed for the game and creates an array of sprites
+     * This is done once only (when the game loads)
+     */
     private void generateSprites() {
         Array<TextureAtlas.AtlasRegion> regions = textureAtlas.getRegions();
         for (TextureAtlas.AtlasRegion region : regions) {
@@ -331,6 +366,13 @@ public class GameScreen implements Screen {
         }
     }
 
+    /**
+     * Draws a loaded sprite on the screen
+     * @param name The name of the sprite to be drawn
+     * @param x X coordinate on the screen
+     * @param y Y coordinate on the screen
+     * @param degrees The rotation angle (in degrees)
+     */
     private void drawSprite(String name, float x, float y, float degrees) {
         Sprite sprite = sprites.get(name);
         float alpha = (name.equals("cloud") ? 0.25f : 1.0f);
@@ -341,6 +383,15 @@ public class GameScreen implements Screen {
         sprite.draw(batch);
     }
 
+    /**
+     * Creates a Body instance for our physics engine, Box2D
+     * @param name The name of this new body
+     * @param x X coordinate in the 2D world
+     * @param y Y coordinate in the 2D world
+     * @param rotation Rotation angle (in degrees)
+     * @param bt Body type
+     * @return A Body instance ready to be manipulated
+     */
     private Body createBody(String name, float x, float y, float rotation, BodyDef.BodyType bt) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = bt;
